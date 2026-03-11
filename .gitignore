@@ -1,0 +1,13 @@
+# Compiled output
+ChatLink.exe
+
+# VS Code settings (optional to exclude)
+.vscode/
+
+# Data files
+data/users.txt
+data/messages.txt
+
+# Windows clutter
+Thumbs.db
+desktop.ini
