@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "../include/auth.h"
 #include "../include/ui.h"
+#include "../include/screen.h"
 #include "../include/fileio.h"
 #include <string.h>
 #include <stdio.h>

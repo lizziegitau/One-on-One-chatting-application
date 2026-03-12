@@ -1,12 +1,12 @@
-#ifndef SCREEN_H
-#define SCREEN_H
+#ifndef APP_SCREEN_H
+#define APP_SCREEN_H
 
 typedef enum
 {
-    SCREEN_WELCOME, // The welcome screen when app opens
-    SCREEN_AUTH,    // Login / Register screen
-    SCREEN_CHAT,    // Main chat screen with sidebar
-    SCREEN_SEARCH   // Search for a user screen
+    SCREEN_WELCOME,
+    SCREEN_AUTH,
+    SCREEN_CHAT,
+    SCREEN_SEARCH
 } AppScreen;
 
 #endif

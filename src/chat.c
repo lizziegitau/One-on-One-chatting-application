@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "../include/chat.h"
 #include "../include/ui.h"
+#include "../include/screen.h"
 #include "../include/fileio.h"
 #include <string.h>
 #include <stdio.h>
@@ -9,11 +10,11 @@
 // ── Layout constants ──
 // These numbers define where everything is positioned.
 // Changing them moves whole sections of the UI.
-#define SIDEBAR_W 220 // width of the left sidebar
-#define HEADER_H 56   // height of the top bar
-#define INPUT_H 60    // height of the message input area
-#define SCREEN_W 860
-#define CHAT_SCREEN_H 580
+#define SIDEBAR_W 220
+#define HEADER_H 56
+#define INPUT_H 60
+#define CHAT_W 860
+#define CHAT_SH 580
 
 // ══════════════════════════════════════════
 //   InitChatScreen
@@ -44,28 +45,28 @@ void InitChatScreen(ChatScreen *cs, const char *username)
         .label = "Search User"};
 
     cs->logoutBtn = (Button){
-        .rect = {10, CHAT_SCREEN_H - 90, (SIDEBAR_W - 25) / 2, 36},
+        .rect = {10, CHAT_SH - 90, (SIDEBAR_W - 25) / 2, 36},
         .label = "Logout"};
 
     cs->deregisterBtn = (Button){
         .rect = {10 + (SIDEBAR_W - 25) / 2 + 5,
-                 CHAT_SCREEN_H - 90,
+                 CHAT_SH - 90,
                  (SIDEBAR_W - 25) / 2, 36},
         .label = "Delete"};
 
     // ── Message input field ──
     cs->messageInput = (InputField){
-        .rect = {SIDEBAR_W + 12, CHAT_SCREEN_H - INPUT_H + 8,
-                 SCREEN_W - SIDEBAR_W - 80, 40},
+        .rect = {SIDEBAR_W + 12, CHAT_SH - INPUT_H + 8,
+                 CHAT_W - SIDEBAR_W - 80, 40},
         .placeholder = "Type a message...",
         .isPassword = false};
 
     // ── Confirm dialog buttons ──
     cs->confirmYesBtn = (Button){
-        .rect = {SCREEN_W / 2 - 110, CHAT_SCREEN_H / 2 + 20, 100, 38},
+        .rect = {CHAT_W / 2 - 110, CHAT_SH / 2 + 20, 100, 38},
         .label = "Yes, Delete"};
     cs->confirmNoBtn = (Button){
-        .rect = {SCREEN_W / 2 + 10, CHAT_SCREEN_H / 2 + 20, 100, 38},
+        .rect = {CHAT_W / 2 + 10, CHAT_SH / 2 + 20, 100, 38},
         .label = "Cancel"};
 }
 
@@ -172,7 +173,7 @@ AppScreen UpdateChatScreen(ChatScreen *cs, char *loggedInUser)
 
         // Send button area — a simple rectangle to the right
         Rectangle sendRect = {
-            SCREEN_W - 58.0f, CHAT_SCREEN_H - INPUT_H + 8.0f, 48, 40};
+            CHAT_W - 58.0f, CHAT_SH - INPUT_H + 8.0f, 48, 40};
 
         bool sendClicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), sendRect);
         bool enterPressed = IsKeyPressed(KEY_ENTER) && cs->messageInput.active;
@@ -230,7 +231,7 @@ void DrawChatScreen(ChatScreen *cs)
     // ════════════════════════════════
     //   SIDEBAR
     // ════════════════════════════════
-    DrawPanel(0, 0, SIDEBAR_W, CHAT_SCREEN_H, COLOR_SIDEBAR, COLOR_BORDER);
+    DrawPanel(0, 0, SIDEBAR_W, CHAT_SH, COLOR_SIDEBAR, COLOR_BORDER);
 
     // ── Sidebar header — show logged in user ──
     DrawPanel(0, 0, SIDEBAR_W, HEADER_H, COLOR_CARD, COLOR_BORDER);
@@ -323,7 +324,7 @@ void DrawChatScreen(ChatScreen *cs)
     //   MAIN CHAT AREA
     // ════════════════════════════════
     int chatX = SIDEBAR_W;
-    int chatW = SCREEN_W - SIDEBAR_W;
+    int chatW = CHAT_W - SIDEBAR_W;
 
     // ── Chat header ──
     DrawPanel(chatX, 0, chatW, HEADER_H, COLOR_SURFACE, COLOR_BORDER);
@@ -348,7 +349,7 @@ void DrawChatScreen(ChatScreen *cs)
 
     // ── Messages area ──
     int msgAreaY = HEADER_H;
-    int msgAreaH = CHAT_SCREEN_H - HEADER_H - INPUT_H;
+    int msgAreaH = CHAT_SH - HEADER_H - INPUT_H;
 
     // Clip drawing to the message area
     BeginScissorMode(chatX, msgAreaY, chatW, msgAreaH);
@@ -358,13 +359,13 @@ void DrawChatScreen(ChatScreen *cs)
         // Empty state
         DrawText("No chat open",
                  chatX + chatW / 2 - 60,
-                 CHAT_SCREEN_H / 2 - 20, 20, COLOR_MUTED);
+                 CHAT_SH / 2 - 20, 20, COLOR_MUTED);
         DrawText("Click a contact on the left to begin",
                  chatX + chatW / 2 -
                      MeasureText("Click a contact on the left to begin",
                                  14) /
                          2,
-                 CHAT_SCREEN_H / 2 + 10, 14, COLOR_MUTED);
+                 CHAT_SH / 2 + 10, 14, COLOR_MUTED);
     }
     else
     {
@@ -429,7 +430,7 @@ void DrawChatScreen(ChatScreen *cs)
     EndScissorMode();
 
     // ── Input area ──
-    DrawPanel(chatX, CHAT_SCREEN_H - INPUT_H,
+    DrawPanel(chatX, CHAT_SH - INPUT_H,
               chatW, INPUT_H, COLOR_SURFACE, COLOR_BORDER);
 
     if (cs->hasPeer)
@@ -438,15 +439,15 @@ void DrawChatScreen(ChatScreen *cs)
 
         // Send button
         Rectangle sendRect = {
-            SCREEN_W - 58.0f, CHAT_SCREEN_H - INPUT_H + 8.0f, 48, 40};
+            CHAT_W - 58.0f, CHAT_SH - INPUT_H + 8.0f, 48, 40};
         bool sendHovered = CheckCollisionPointRec(
             GetMousePosition(), sendRect);
 
         DrawRectangleRounded(sendRect, 0.3f, 6,
                              sendHovered ? COLOR_ACCENT : (Color){233, 69, 96, 180});
         DrawText(">>",
-                 SCREEN_W - 48,
-                 CHAT_SCREEN_H - INPUT_H + 20, 16, WHITE);
+                 CHAT_W - 48,
+                 CHAT_SH - INPUT_H + 20, 16, WHITE);
     }
     else
     {
@@ -456,7 +457,7 @@ void DrawChatScreen(ChatScreen *cs)
                      MeasureText("Select a contact to send a message",
                                  14) /
                          2,
-                 CHAT_SCREEN_H - INPUT_H + 22, 14, COLOR_MUTED);
+                 CHAT_SH - INPUT_H + 22, 14, COLOR_MUTED);
     }
 
     // ════════════════════════════════
@@ -465,13 +466,13 @@ void DrawChatScreen(ChatScreen *cs)
     if (cs->showConfirmDialog)
     {
         // Dark overlay
-        DrawRectangle(0, 0, SCREEN_W, CHAT_SCREEN_H,
+        DrawRectangle(0, 0, CHAT_W, CHAT_SH,
                       (Color){0, 0, 0, 160});
 
         // Dialog box
         int dw = 340, dh = 160;
-        int dx = SCREEN_W / 2 - dw / 2;
-        int dy = CHAT_SCREEN_H / 2 - dh / 2;
+        int dx = CHAT_W / 2 - dw / 2;
+        int dy = CHAT_SH / 2 - dh / 2;
 
         DrawPanel(dx, dy, dw, dh, COLOR_CARD, COLOR_ACCENT);
 

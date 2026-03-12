@@ -110,11 +110,11 @@ bool ValidateLogin(const char *username, const char *password)
 // ══════════════════════════════════════════
 bool DeleteUser(const char *username)
 {
+    // ── Step 1: Remove user from users.txt ──
     User users[MAX_USERS];
     int count = 0;
     LoadUsers(users, &count);
 
-    // Rewrite file skipping the deleted user
     FILE *f = fopen(USERS_FILE, "w");
     if (f == NULL)
         return false;
@@ -122,10 +122,41 @@ bool DeleteUser(const char *username)
     for (int i = 0; i < count; i++)
     {
         if (strcmp(users[i].username, username) != 0)
-            fprintf(f, "%s,%s\n", users[i].username, users[i].password);
+            fprintf(f, "%s,%s\n",
+                    users[i].username,
+                    users[i].password);
     }
-
     fclose(f);
+
+    // ── Step 2: Remove all messages involving this user ──
+    // Load all messages
+    Message messages[MAX_MESSAGES];
+    int msgCount = 0;
+    LoadMessages(messages, &msgCount);
+
+    // Rewrite messages.txt skipping any message
+    // where this user is the sender OR recipient
+    FILE *mf = fopen(MESSAGES_FILE, "w");
+    if (mf == NULL)
+        return false;
+
+    for (int i = 0; i < msgCount; i++)
+    {
+        bool userIsSender =
+            strcmp(messages[i].sender, username) == 0;
+        bool userIsRecipient =
+            strcmp(messages[i].recipient, username) == 0;
+
+        // Only keep messages that don't involve this user
+        if (!userIsSender && !userIsRecipient)
+            fprintf(mf, "%s,%s,%s,%s\n",
+                    messages[i].sender,
+                    messages[i].recipient,
+                    messages[i].content,
+                    messages[i].timestamp);
+    }
+    fclose(mf);
+
     return true;
 }
 

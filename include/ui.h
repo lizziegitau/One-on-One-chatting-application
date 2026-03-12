@@ -1,5 +1,7 @@
 #ifndef UI_H
 #define UI_H
+#define SCREEN_W 860
+#define SCREEN_H 580
 
 #include "raylib.h"
 
