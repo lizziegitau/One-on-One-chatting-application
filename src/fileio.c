@@ -3,39 +3,30 @@
 #include <string.h>
 #include <stdlib.h>
 
-// ── File paths ──
-// All data files live in the data/ folder
+/* File paths for the two data files */
 #define USERS_FILE "data/users.txt"
 #define MESSAGES_FILE "data/messages.txt"
 
-// ══════════════════════════════════════════
-//   LoadUsers
-//   Reads all users from users.txt into
-//   an array of User structs.
-//   Returns true if successful.
-// ══════════════════════════════════════════
+/* Reads all users from users.txt into the users[] array.
+ * Returns false if the file does not exist yet (first run). */
 bool LoadUsers(User *users, int *count)
 {
     *count = 0;
 
     FILE *f = fopen(USERS_FILE, "r");
     if (f == NULL)
-        return false; // file doesn't exist yet
+        return false;
 
-    // Read one line at a time
-    // Each line format: username,password
     char line[128];
     while (fgets(line, sizeof(line), f) && *count < MAX_USERS)
     {
-        // Remove newline character at end
-        line[strcspn(line, "\n")] = '\0';
+        line[strcspn(line, "\n")] = '\0'; /* Strip trailing newline */
 
-        // Split by comma
+        /* Split line at the comma into username and password */
         char *comma = strchr(line, ',');
         if (comma == NULL)
-            continue; // skip malformed lines
+            continue; /* Skip malformed lines */
 
-        // Split the line into two parts at the comma
         *comma = '\0';
         strncpy(users[*count].username, line, MAX_USERNAME - 1);
         strncpy(users[*count].password, comma + 1, MAX_PASSWORD - 1);
@@ -46,15 +37,10 @@ bool LoadUsers(User *users, int *count)
     return true;
 }
 
-// ══════════════════════════════════════════
-//   SaveUser
-//   Appends a new user to users.txt.
-//   Returns true if successful.
-// ══════════════════════════════════════════
+/* Appends a single new user record to users.txt.
+ * Uses "a" (append) mode so existing records are not overwritten. */
 bool SaveUser(User *user)
 {
-    // "a" mode = append — adds to end of file
-    // without deleting existing content
     FILE *f = fopen(USERS_FILE, "a");
     if (f == NULL)
         return false;
@@ -64,11 +50,7 @@ bool SaveUser(User *user)
     return true;
 }
 
-// ══════════════════════════════════════════
-//   UserExists
-//   Returns true if username is already
-//   registered in users.txt
-// ══════════════════════════════════════════
+/* Returns true if the given username already exists in users.txt */
 bool UserExists(const char *username)
 {
     User users[MAX_USERS];
@@ -76,18 +58,13 @@ bool UserExists(const char *username)
     LoadUsers(users, &count);
 
     for (int i = 0; i < count; i++)
-    {
         if (strcmp(users[i].username, username) == 0)
             return true;
-    }
+
     return false;
 }
 
-// ══════════════════════════════════════════
-//   ValidateLogin
-//   Returns true if username + password
-//   match a record in users.txt
-// ══════════════════════════════════════════
+/* Returns true if the username and password match a record in users.txt */
 bool ValidateLogin(const char *username, const char *password)
 {
     User users[MAX_USERS];
@@ -95,22 +72,18 @@ bool ValidateLogin(const char *username, const char *password)
     LoadUsers(users, &count);
 
     for (int i = 0; i < count; i++)
-    {
         if (strcmp(users[i].username, username) == 0 &&
             strcmp(users[i].password, password) == 0)
             return true;
-    }
+
     return false;
 }
 
-// ══════════════════════════════════════════
-//   DeleteUser
-//   Removes a user from users.txt by
-//   rewriting the file without that user.
-// ══════════════════════════════════════════
+/* Removes a user from users.txt and deletes all their messages from messages.txt.
+ * Both files are rewritten from scratch excluding the deleted user's records. */
 bool DeleteUser(const char *username)
 {
-    // ── Step 1: Remove user from users.txt ──
+    /* Step 1 — Rewrite users.txt excluding the deleted user */
     User users[MAX_USERS];
     int count = 0;
     LoadUsers(users, &count);
@@ -120,34 +93,26 @@ bool DeleteUser(const char *username)
         return false;
 
     for (int i = 0; i < count; i++)
-    {
         if (strcmp(users[i].username, username) != 0)
-            fprintf(f, "%s,%s\n",
-                    users[i].username,
-                    users[i].password);
-    }
+            fprintf(f, "%s,%s\n", users[i].username, users[i].password);
+
     fclose(f);
 
-    // ── Step 2: Remove all messages involving this user ──
-    // Load all messages
+    /* Step 2 — Rewrite messages.txt excluding any message sent or received by this user */
     Message messages[MAX_MESSAGES];
     int msgCount = 0;
     LoadMessages(messages, &msgCount);
 
-    // Rewrite messages.txt skipping any message
-    // where this user is the sender OR recipient
     FILE *mf = fopen(MESSAGES_FILE, "w");
     if (mf == NULL)
         return false;
 
     for (int i = 0; i < msgCount; i++)
     {
-        bool userIsSender =
-            strcmp(messages[i].sender, username) == 0;
-        bool userIsRecipient =
-            strcmp(messages[i].recipient, username) == 0;
+        bool userIsSender = strcmp(messages[i].sender, username) == 0;
+        bool userIsRecipient = strcmp(messages[i].recipient, username) == 0;
 
-        // Only keep messages that don't involve this user
+        /* Only write messages that do not involve the deleted user */
         if (!userIsSender && !userIsRecipient)
             fprintf(mf, "%s,%s,%s,%s\n",
                     messages[i].sender,
@@ -160,10 +125,8 @@ bool DeleteUser(const char *username)
     return true;
 }
 
-// ══════════════════════════════════════════
-//   LoadMessages
-//   Reads all messages from messages.txt
-// ══════════════════════════════════════════
+/* Reads all messages from messages.txt into the messages[] array.
+ * Each line is parsed into 4 comma-separated fields: sender,recipient,content,timestamp. */
 bool LoadMessages(Message *messages, int *count)
 {
     *count = 0;
@@ -172,20 +135,19 @@ bool LoadMessages(Message *messages, int *count)
     if (f == NULL)
         return false;
 
-    // Each line: sender,recipient,content,timestamp
     char line[512];
     while (fgets(line, sizeof(line), f) && *count < MAX_MESSAGES)
     {
-        line[strcspn(line, "\n")] = '\0';
+        line[strcspn(line, "\n")] = '\0'; /* Strip trailing newline */
 
-        // Parse each comma-separated field
-        char *p1 = strtok(line, ",");
-        char *p2 = strtok(NULL, ",");
-        char *p3 = strtok(NULL, ",");
-        char *p4 = strtok(NULL, ",");
+        /* Parse the four comma-separated fields using strtok */
+        char *p1 = strtok(line, ","); /* sender    */
+        char *p2 = strtok(NULL, ","); /* recipient */
+        char *p3 = strtok(NULL, ","); /* content   */
+        char *p4 = strtok(NULL, ","); /* timestamp */
 
         if (!p1 || !p2 || !p3 || !p4)
-            continue;
+            continue; /* Skip malformed lines */
 
         strncpy(messages[*count].sender, p1, MAX_USERNAME - 1);
         strncpy(messages[*count].recipient, p2, MAX_USERNAME - 1);
@@ -198,10 +160,8 @@ bool LoadMessages(Message *messages, int *count)
     return true;
 }
 
-// ══════════════════════════════════════════
-//   SaveMessage
-//   Appends a new message to messages.txt
-// ══════════════════════════════════════════
+/* Appends a single new message to messages.txt.
+ * Uses "a" (append) mode so existing messages are not overwritten. */
 bool SaveMessage(Message *message)
 {
     FILE *f = fopen(MESSAGES_FILE, "a");

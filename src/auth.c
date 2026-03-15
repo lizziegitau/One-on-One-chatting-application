@@ -6,23 +6,17 @@
 #include <string.h>
 #include <stdio.h>
 
-// ══════════════════════════════════════════
-//   InitAuthScreen
-//   Sets up positions of all UI elements.
-//   startAsRegister = true if user clicked
-//   "Register" on the welcome screen.
-// ══════════════════════════════════════════
+/* Sets up input field positions, button labels and initial mode.
+ * startAsRegister=true opens in Register mode, false opens in Login mode. */
 void InitAuthScreen(AuthScreen *as, bool startAsRegister)
 {
-    int cx = 860 / 2; // horizontal center
-
-    // Card is 360px wide, centered
-    int cardX = cx - 180;
+    int cx = 860 / 2;
+    int cardX = cx - 180; /* Card is 360px wide, centered */
     int cardY = 100;
 
     as->mode = startAsRegister ? AUTH_REGISTER : AUTH_LOGIN;
 
-    // ── Input fields ──
+    /* Input fields */
     as->usernameField = (InputField){
         .rect = {cardX + 20, cardY + 110, 320, 44},
         .placeholder = "enter your username",
@@ -31,10 +25,9 @@ void InitAuthScreen(AuthScreen *as, bool startAsRegister)
     as->passwordField = (InputField){
         .rect = {cardX + 20, cardY + 190, 320, 44},
         .placeholder = "enter your password",
-        .isPassword = true // shows *** instead of text
-    };
+        .isPassword = true}; /* Displays *** instead of typed text */
 
-    // ── Buttons ──
+    /* Buttons — labels change depending on starting mode */
     as->submitBtn = (Button){
         .rect = {cardX + 20, cardY + 260, 320, 48},
         .label = startAsRegister ? "Register" : "Login"};
@@ -49,34 +42,25 @@ void InitAuthScreen(AuthScreen *as, bool startAsRegister)
         .rect = {cardX + 120, cardY + 374, 120, 32},
         .label = "< Back"};
 
-    // Clear message
+    /* Clear any leftover message from a previous visit */
     memset(as->message, 0, sizeof(as->message));
     as->messageTimer = 0;
     as->messageIsOk = false;
 }
 
-// ══════════════════════════════════════════
-//   UpdateAuthScreen
-//   Handles all logic — typing, clicking,
-//   validating, saving.
-//   loggedInUser is filled when login succeeds.
-// ══════════════════════════════════════════
+/* Handles all Auth Screen logic — field input, form submission, mode switching and navigation */
 AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser)
 {
-    /* int cardX = 860 / 2 - 180;
-    int cardY = 100; */
-
-    // ── Activate input field on click ──
+    /* Activate the clicked field, deactivate the other */
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         as->usernameField.active = CheckCollisionPointRec(
             GetMousePosition(), as->usernameField.rect);
-
         as->passwordField.active = CheckCollisionPointRec(
             GetMousePosition(), as->passwordField.rect);
     }
 
-    // ── Tab key switches between fields ──
+    /* Tab key toggles focus between username and password fields */
     if (IsKeyPressed(KEY_TAB))
     {
         if (as->usernameField.active)
@@ -91,23 +75,21 @@ AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser)
         }
     }
 
-    // ── Handle keyboard input for active field ──
+    /* Pass keyboard input to whichever field is active */
     HandleInputField(&as->usernameField);
     HandleInputField(&as->passwordField);
 
-    // ── Enter key submits the form ──
+    /* Enter key triggers form submission same as clicking the submit button */
     if (IsKeyPressed(KEY_ENTER))
         goto submit;
 
-    // ── Submit button clicked ──
     if (IsButtonClicked(&as->submitBtn))
     {
     submit:;
-
         const char *username = as->usernameField.text;
         const char *password = as->passwordField.text;
 
-        // Validate — fields must not be empty
+        /* Both fields must be filled before submitting */
         if (strlen(username) == 0 || strlen(password) == 0)
         {
             strcpy(as->message, "All fields are required!");
@@ -118,7 +100,7 @@ AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser)
 
         if (as->mode == AUTH_REGISTER)
         {
-            // ── Registration logic ──
+            /* Registration — check for duplicate username before saving */
             if (UserExists(username))
             {
                 strcpy(as->message, "Username already taken!");
@@ -127,13 +109,12 @@ AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser)
                 return SCREEN_AUTH;
             }
 
-            // Save new user to file
+            /* Save new user to users.txt and log them in immediately */
             User newUser;
             strncpy(newUser.username, username, MAX_USERNAME - 1);
             strncpy(newUser.password, password, MAX_PASSWORD - 1);
             SaveUser(&newUser);
 
-            // Log them in immediately after registering
             strncpy(loggedInUser, username, MAX_USERNAME - 1);
             strcpy(as->message, "Account created! Welcome!");
             as->messageIsOk = true;
@@ -142,7 +123,7 @@ AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser)
         }
         else
         {
-            // ── Login logic ──
+            /* Login — validate credentials against users.txt */
             if (ValidateLogin(username, password))
             {
                 strncpy(loggedInUser, username, MAX_USERNAME - 1);
@@ -161,20 +142,18 @@ AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser)
         }
     }
 
-    // ── Switch between login / register ──
+    /* Switch button — toggle between Login and Register mode */
     if (IsButtonClicked(&as->switchBtn))
     {
         as->mode = (as->mode == AUTH_LOGIN) ? AUTH_REGISTER : AUTH_LOGIN;
 
-        // Update button labels
-        as->submitBtn.label = (as->mode == AUTH_REGISTER)
-                                  ? "Register"
-                                  : "Login";
+        /* Update button labels to match the new mode */
+        as->submitBtn.label = (as->mode == AUTH_REGISTER) ? "Register" : "Login";
         as->switchBtn.label = (as->mode == AUTH_REGISTER)
                                   ? "Already registered? Login"
                                   : "No account? Register here";
 
-        // Clear the fields when switching
+        /* Clear fields and message when switching modes */
         ClearInputField(&as->usernameField);
         ClearInputField(&as->passwordField);
         memset(as->message, 0, sizeof(as->message));
@@ -182,7 +161,7 @@ AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser)
         return SCREEN_AUTH;
     }
 
-    // ── Back button ──
+    /* Back button — return to Welcome Screen */
     if (IsButtonClicked(&as->backBtn))
     {
         ClearInputField(&as->usernameField);
@@ -193,10 +172,7 @@ AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser)
     return SCREEN_AUTH;
 }
 
-// ══════════════════════════════════════════
-//   DrawAuthScreen
-//   Draws the full login/register form.
-// ══════════════════════════════════════════
+/* Draws the full Auth Screen — card, title, field labels, inputs, buttons and feedback message */
 void DrawAuthScreen(AuthScreen *as)
 {
     int cx = 860 / 2;
@@ -205,51 +181,35 @@ void DrawAuthScreen(AuthScreen *as)
     int cardW = 360;
     int cardH = 420;
 
-    // ── Background ──
     ClearBackground(COLOR_BG);
 
-    // ── Subtle top gradient strip ──
+    /* Thin accent bar along the top edge */
     DrawRectangle(0, 0, 860, 4, COLOR_ACCENT);
 
-    // ── Card background ──
+    /* Card background */
     DrawPanel(cardX, cardY, cardW, cardH, COLOR_CARD, COLOR_BORDER);
 
-    // ── Card title ──
-    const char *title = (as->mode == AUTH_REGISTER)
-                            ? "Create Account"
-                            : "Welcome Back";
+    /* Title and subtitle change based on current mode */
+    const char *title = (as->mode == AUTH_REGISTER) ? "Create Account" : "Welcome Back";
+    const char *sub = (as->mode == AUTH_REGISTER) ? "Join ChatLink today" : "Login to your account";
     DrawCenteredText(title, cardY + 24, 26, COLOR_TEXT);
-
-    // ── Subtitle ──
-    const char *sub = (as->mode == AUTH_REGISTER)
-                          ? "Join ChatLink today"
-                          : "Login to your account";
     DrawCenteredText(sub, cardY + 60, 16, COLOR_MUTED);
 
-    // ── Field labels ──
-    DrawText("USERNAME",
-             cardX + 20, cardY + 86, 12, COLOR_MUTED);
-    DrawText("PASSWORD",
-             cardX + 20, cardY + 166, 12, COLOR_MUTED);
+    /* Field labels */
+    DrawText("USERNAME", cardX + 20, cardY + 86, 12, COLOR_MUTED);
+    DrawText("PASSWORD", cardX + 20, cardY + 166, 12, COLOR_MUTED);
 
-    // ── Input fields ──
+    /* Input fields, submit button, switch link and back button */
     DrawInputField(&as->usernameField);
     DrawInputField(&as->passwordField);
-
-    // ── Submit button ──
     DrawButton(&as->submitBtn, COLOR_ACCENT, WHITE);
-
-    // ── Switch mode link ──
     DrawButton(&as->switchBtn, COLOR_BG, COLOR_TEAL);
-
-    // ── Back button ──
     DrawButton(&as->backBtn, COLOR_BG, COLOR_MUTED);
 
-    // ── Error / success message ──
+    /* Feedback message — green for success, red for error, fades after timer expires */
     if (as->messageTimer > 0)
     {
         as->messageTimer -= GetFrameTime();
-
         Color msgColor = as->messageIsOk ? COLOR_GREEN : COLOR_ACCENT;
         DrawCenteredText(as->message, cardY + cardH + 16, 16, msgColor);
     }

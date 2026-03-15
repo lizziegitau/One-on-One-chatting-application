@@ -1,48 +1,32 @@
 #include "raylib.h"
 #include "../include/ui.h"
-#include <string.h> // for strlen, strcpy
-#include <stdio.h>  // for sprintf
+#include <string.h>
+#include <stdio.h>
 
-// ══════════════════════════════════════════
-//   DrawPanel
-//   Draws a filled rectangle with a border.
-//   Used for cards, sidebars and popups.
-// ══════════════════════════════════════════
+/* Draws a filled rectangle with a border used for cards, sidebars and popups
+ */
 void DrawPanel(int x, int y, int w, int h, Color color, Color borderColor)
 {
-    // Draw the filled background
     DrawRectangle(x, y, w, h, color);
 
-    // Draw a 1-pixel border around it
     DrawRectangleLines(x, y, w, h, borderColor);
 }
 
-// ══════════════════════════════════════════
-//   DrawButton
-//   Draws a button and changes color when
-//   the mouse hovers over it.
-// ══════════════════════════════════════════
 void DrawButton(Button *btn, Color bgColor, Color textColor)
 {
-    // Check if mouse is hovering over this button
     btn->hovered = CheckCollisionPointRec(
-        GetMousePosition(), // where is the mouse?
-        btn->rect           // does it overlap the button's rectangle?
-    );
+        GetMousePosition(),
+        btn->rect);
 
-    // If hovered, make the button slightly brighter
     Color drawColor = btn->hovered
                           ? (Color){bgColor.r + 20, bgColor.g + 20, bgColor.b + 20, 255}
                           : bgColor;
 
-    // Draw rounded rectangle for the button background
     DrawRectangleRounded(btn->rect, 0.3f, 6, drawColor);
 
-    // Measure text width so we can center it
     int fontSize = 16;
     int textWidth = MeasureText(btn->label, fontSize);
 
-    // Draw the label centered inside the button
     DrawText(
         btn->label,
         (int)(btn->rect.x + btn->rect.width / 2 - textWidth / 2),
@@ -50,44 +34,30 @@ void DrawButton(Button *btn, Color bgColor, Color textColor)
         fontSize,
         textColor);
 
-    // If hovered, draw a subtle border to highlight it
     if (btn->hovered)
         DrawRectangleRoundedLines(btn->rect, 0.3f, 6, COLOR_ACCENT);
 }
 
-// ══════════════════════════════════════════
-//   IsButtonClicked
-//   Returns true if the button was clicked
-//   this frame (hovered + left mouse pressed)
-// ══════════════════════════════════════════
 bool IsButtonClicked(Button *btn)
 {
     return btn->hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
-// ══════════════════════════════════════════
-//   DrawInputField
-//   Draws a text input box. If active,
-//   shows a blinking cursor.
-// ══════════════════════════════════════════
 void DrawInputField(InputField *field)
 {
-    // Change border color if field is active (selected)
+
     Color borderColor = field->active ? COLOR_ACCENT : COLOR_INPUT_BORDER;
 
-    // Draw the background box
     DrawRectangleRounded(field->rect, 0.2f, 6, COLOR_INPUT_BG);
 
-    // Draw the border
     DrawRectangleRoundedLines(field->rect, 0.2f, 6, borderColor);
 
-    // Decide what text to display
     int fontSize = 16;
     Color textCol = COLOR_TEXT;
 
     if (field->textLength == 0)
     {
-        // Show placeholder text in muted grey
+
         DrawText(
             field->placeholder,
             (int)field->rect.x + 12,
@@ -97,7 +67,7 @@ void DrawInputField(InputField *field)
     }
     else if (field->isPassword)
     {
-        // Show asterisks for password fields
+
         char masked[256] = {0};
         for (int i = 0; i < field->textLength; i++)
             masked[i] = '*';
@@ -110,7 +80,6 @@ void DrawInputField(InputField *field)
     }
     else
     {
-        // Show the actual typed text
         DrawText(
             field->text,
             (int)field->rect.x + 12,
@@ -119,11 +88,10 @@ void DrawInputField(InputField *field)
             textCol);
     }
 
-    // Draw blinking cursor if field is active
     if (field->active)
     {
         // GetTime() returns seconds since start
-        // We use it to make the cursor blink on/off
+
         if ((int)(GetTime() * 2) % 2 == 0)
         {
             // Calculate cursor x position (after the last character)

@@ -13,62 +13,50 @@ int main(void)
     InitWindow(860, 580, "ChatLink - One on One Chat");
     SetTargetFPS(60);
 
-    // ── Screen structs ──
     WelcomeScreen welcomeScreen;
     AuthScreen authScreen;
     ChatScreen chatScreen;
     SearchScreen searchScreen;
 
-    // ── App state ──
-    AppScreen currentScreen = SCREEN_WELCOME;
-    char loggedInUser[MAX_USERNAME] = {0};
-    char peerToOpen[MAX_USERNAME] = {0};
+    AppScreen currentScreen = SCREEN_WELCOME; /* Tracks the active screen */
+    char loggedInUser[MAX_USERNAME] = {0};    /* Written by auth on login, cleared on logout */
+    char peerToOpen[MAX_USERNAME] = {0};      /* Written by search screen, consumed by chat screen */
 
-    // ── Toast ──
+    /* Toast notification state */
     char toastMsg[128] = {0};
-    float toastTimer = 0.0f;
-    bool toastIsOk = true;
+    float toastTimer = 0.0f; /* Visible while > 0, counts down each frame */
+    bool toastIsOk = true;   /* true = green, false = red */
 
-    // ── Initialize first screen ──
     InitWelcomeScreen(&welcomeScreen);
 
-    // ════════════════════════════════════════════
-    //   MAIN LOOP
-    // ════════════════════════════════════════════
+    /* Main loop — runs at 60 FPS until window is closed */
     while (!WindowShouldClose())
     {
-        // ── UPDATE ──
         AppScreen nextScreen = currentScreen;
 
+        /* UPDATE — call active screen's logic, handle any screen transition */
         switch (currentScreen)
         {
-        // ── Welcome ──
         case SCREEN_WELCOME:
         {
-            AppScreen result =
-                UpdateWelcomeScreen(&welcomeScreen);
-
+            AppScreen result = UpdateWelcomeScreen(&welcomeScreen);
             if (result != SCREEN_WELCOME)
             {
-                bool wantsRegister =
-                    welcomeScreen.registerBtn.hovered;
+                /* Pass hovered button to auth so it opens in the correct mode */
+                bool wantsRegister = welcomeScreen.registerBtn.hovered;
                 InitAuthScreen(&authScreen, wantsRegister);
                 nextScreen = SCREEN_AUTH;
             }
             break;
         }
 
-        // ── Auth ──
         case SCREEN_AUTH:
         {
-            AppScreen result =
-                UpdateAuthScreen(&authScreen, loggedInUser);
-
+            AppScreen result = UpdateAuthScreen(&authScreen, loggedInUser);
             if (result == SCREEN_CHAT)
             {
                 InitChatScreen(&chatScreen, loggedInUser);
-                snprintf(toastMsg, sizeof(toastMsg),
-                         "Welcome, %s!", loggedInUser);
+                snprintf(toastMsg, sizeof(toastMsg), "Welcome, %s!", loggedInUser);
                 toastTimer = 2.5f;
                 toastIsOk = true;
             }
@@ -76,30 +64,26 @@ int main(void)
             break;
         }
 
-        // ── Chat ──
         case SCREEN_CHAT:
         {
-            // If returning from search with a peer to open
+            /* If returning from search with a peer selected, open that chat first */
             if (strlen(peerToOpen) > 0)
             {
                 LoadChatForPeer(&chatScreen, peerToOpen);
                 memset(peerToOpen, 0, sizeof(peerToOpen));
             }
 
-            AppScreen result =
-                UpdateChatScreen(&chatScreen, loggedInUser);
+            AppScreen result = UpdateChatScreen(&chatScreen, loggedInUser);
 
             if (result == SCREEN_SEARCH)
             {
-                // Going to search screen
                 InitSearchScreen(&searchScreen, loggedInUser);
                 nextScreen = SCREEN_SEARCH;
             }
             else if (result == SCREEN_WELCOME)
             {
-                // Logged out or deregistered
-                snprintf(toastMsg, sizeof(toastMsg),
-                         "Goodbye! See you soon.");
+                /* Logout or account deletion — reset welcome and show goodbye toast */
+                snprintf(toastMsg, sizeof(toastMsg), "Goodbye! See you soon.");
                 toastTimer = 2.0f;
                 toastIsOk = true;
                 InitWelcomeScreen(&welcomeScreen);
@@ -112,17 +96,13 @@ int main(void)
             break;
         }
 
-        // ── Search ──
         case SCREEN_SEARCH:
         {
-            AppScreen result =
-                UpdateSearchScreen(&searchScreen, peerToOpen);
-
+            AppScreen result = UpdateSearchScreen(&searchScreen, peerToOpen);
             if (result == SCREEN_CHAT)
             {
-                // Reload chat messages in case new ones arrived
-                LoadMessages(chatScreen.allMessages,
-                             &chatScreen.allMessageCount);
+                /* Reload messages in case new ones arrived while on search screen */
+                LoadMessages(chatScreen.allMessages, &chatScreen.allMessageCount);
                 nextScreen = SCREEN_CHAT;
             }
             else
@@ -138,34 +118,27 @@ int main(void)
 
         currentScreen = nextScreen;
 
-        // ── DRAW ──
+        /* DRAW — render active screen, toast always drawn on top */
         BeginDrawing();
-
         switch (currentScreen)
         {
         case SCREEN_WELCOME:
             DrawWelcomeScreen(&welcomeScreen);
             break;
-
         case SCREEN_AUTH:
             DrawAuthScreen(&authScreen);
             break;
-
         case SCREEN_CHAT:
             DrawChatScreen(&chatScreen);
             break;
-
         case SCREEN_SEARCH:
             DrawSearchScreen(&searchScreen);
             break;
-
         default:
             ClearBackground(COLOR_BG);
             break;
         }
-
         DrawToast(toastMsg, toastIsOk, &toastTimer);
-
         EndDrawing();
     }
 

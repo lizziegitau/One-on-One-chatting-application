@@ -5,31 +5,33 @@
 #include "../include/screen.h"
 #include "../include/fileio.h"
 
-// ── Result states ──
+/* Search Result Enum */
 typedef enum
 {
-    SEARCH_IDLE,     // user hasn't searched yet
-    SEARCH_FOUND,    // user was found
-    SEARCH_NOT_FOUND // user was not found
+    SEARCH_IDLE,     /* No search performed */
+    SEARCH_FOUND,    /* User found */
+    SEARCH_NOT_FOUND /* User not found */
 } SearchResult;
 
-// ── Holds everything the Search screen needs ──
+/* Search Screen Struct */
 typedef struct
 {
-    InputField searchField; // the search text box
-    Button searchBtn;       // Search button
-    Button backBtn;         // Back to chat
-    Button chatBtn;         // Open Chat with result
+    InputField searchField; /* Search input field */
+    Button searchBtn;       /* Search button */
+    Button backBtn;         /* Back button */
+    Button chatBtn;         /* Open Chat button */
 
-    SearchResult result; // current result state
-    User foundUser;      // the user that was found
+    /* Search Results */
+    SearchResult result;
+    User foundUser;
 
-    char currentUser[MAX_USERNAME];  // who is logged in
-    char selectedPeer[MAX_USERNAME]; // who to open chat with
-    bool openChat;                   // signal to open a chat
+    /* User Information */
+    char currentUser[MAX_USERNAME];
+    char selectedPeer[MAX_USERNAME];
+    bool openChat;
 } SearchScreen;
 
-// ── Function declarations ──
+/* Function Declarations */
 void InitSearchScreen(SearchScreen *ss, const char *currentUser);
 AppScreen UpdateSearchScreen(SearchScreen *ss, char *peerToOpen);
 void DrawSearchScreen(SearchScreen *ss);

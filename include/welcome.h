@@ -4,13 +4,14 @@
 #include "../include/ui.h"
 #include "../include/screen.h"
 
+/* Welcome Struct */
 typedef struct
 {
-    Button loginBtn;
-    Button registerBtn;
+    Button loginBtn;    /* Login Button */
+    Button registerBtn; /* Register Button */
 } WelcomeScreen;
 
-// ── Function declarations ──
+/* Function Declarations */
 void InitWelcomeScreen(WelcomeScreen *ws);
 AppScreen UpdateWelcomeScreen(WelcomeScreen *ws);
 void DrawWelcomeScreen(WelcomeScreen *ws);

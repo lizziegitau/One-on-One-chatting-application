@@ -4,35 +4,33 @@
 #include "../include/ui.h"
 #include "../include/screen.h"
 
-// ── Which mode is the auth screen in? ──
+/* AuthMode Enum that tracks which form (Login or Register) is being displayed */
 typedef enum
 {
-    AUTH_LOGIN,   // showing the login form
-    AUTH_REGISTER // showing the register form
+    AUTH_LOGIN,   /* Show Login form */
+    AUTH_REGISTER /* Show Register form */
 } AuthMode;
 
-// ── Holds everything the Auth screen needs ──
+/* AuthScreen Struct */
 typedef struct
 {
-    AuthMode mode; // login or register?
+    AuthMode mode;
 
-    InputField usernameField; // username text box
-    InputField passwordField; // password text box
+    InputField usernameField; /* Username input field */
+    InputField passwordField; /* Password input field */
 
-    Button submitBtn; // Login / Register button
-    Button switchBtn; // "Switch to Register" / "Switch to Login"
-    Button backBtn;   // Back to Welcome screen
+    Button submitBtn; /* Button to submit Login or Register form*/
+    Button switchBtn; /* Button to switch between Login and Register forms */
+    Button backBtn;   /* Button to go back to the previous screen */
 
-    char message[128];  // error or success message to display
-    bool messageIsOk;   // green if true, red if false
-    float messageTimer; // how long to show the message
+    char message[128];  /* Message system to show feedback */
+    bool messageIsOk;   /* Flag to indicate if the message is an error or success */
+    float messageTimer; /* Timer for message display */
 
-    // Store which button was clicked on welcome screen
-    // so we know whether to start in login or register mode
     bool startAsRegister;
 } AuthScreen;
 
-// ── Function declarations ──
+/* Function Declarations */
 void InitAuthScreen(AuthScreen *as, bool startAsRegister);
 AppScreen UpdateAuthScreen(AuthScreen *as, char *loggedInUser);
 void DrawAuthScreen(AuthScreen *as);
